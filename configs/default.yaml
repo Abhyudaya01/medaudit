@@ -1,0 +1,79 @@
+# MedAudit run configuration.
+#
+# Model IDs below are EXAMPLES — replace them with the exact IDs your accounts can
+# call (OpenAI: platform model list; Bedrock: console > Model access, and use an
+# inference-profile ID such as "us.<provider>.<model>" where the model requires one).
+#
+# Pricing is left blank on purpose. Fill price_input_per_mtok / price_output_per_mtok
+# (USD per 1M tokens) from the providers' current pricing pages before reporting
+# cost. With blank pricing, token counts are still tracked and cost columns are empty.
+#
+# Credentials come from the environment: OPENAI_API_KEY for OpenAI; the standard
+# AWS chain (AWS_PROFILE / AWS_ACCESS_KEY_ID ...) for Bedrock.
+# Any value can reference env vars: ${VAR} or ${VAR:-default}.
+
+run_name: ${MEDAUDIT_RUN:-pilot}
+output_dir: runs
+
+samples_per_prompt: 1      # >1 measures stochasticity; CIs switch to cluster bootstrap
+categories: null           # null = all six; or e.g. [medication_dosing, triage_red_flags]
+limit: null                # first N seeds only (smoke tests)
+max_retries: 5
+request_timeout_s: 120
+bootstrap_iters: 2000
+random_seed: 17
+human_sample_size: 120
+
+models:
+  - name: GPT-A
+    provider: openai
+    model_id: ${OPENAI_MODEL_A:-gpt-4o}
+    temperature: 0.0       # set to null for models that reject temperature
+    max_tokens: 1024
+    max_concurrency: 4
+    price_input_per_mtok: null
+    price_output_per_mtok: null
+
+  - name: GPT-B
+    provider: openai
+    model_id: ${OPENAI_MODEL_B:-gpt-4o-mini}
+    temperature: 0.0
+    max_tokens: 1024
+    max_concurrency: 4
+    price_input_per_mtok: null
+    price_output_per_mtok: null
+
+  - name: Llama-Bedrock
+    provider: bedrock
+    model_id: ${BEDROCK_MODEL_A:-us.meta.llama3-3-70b-instruct-v1:0}
+    region: ${AWS_REGION:-us-east-1}
+    temperature: 0.0
+    max_tokens: 1024
+    max_concurrency: 2
+    price_input_per_mtok: null
+    price_output_per_mtok: null
+
+  - name: Nova-Bedrock
+    provider: bedrock
+    model_id: ${BEDROCK_MODEL_B:-us.amazon.nova-pro-v1:0}
+    region: ${AWS_REGION:-us-east-1}
+    temperature: 0.0
+    max_tokens: 1024
+    max_concurrency: 2
+    price_input_per_mtok: null
+    price_output_per_mtok: null
+    enabled: true          # set false to skip a model without deleting it
+
+# Judges should come from a different model family than the audited models
+# (self-preference bias). `medaudit estimate` warns on overlap. With 2+ judges,
+# verdicts are majority-voted (ties -> fail) and inter-judge kappa is reported.
+judges:
+  - name: Judge-Claude
+    provider: bedrock
+    model_id: ${JUDGE_MODEL_A:-us.anthropic.claude-sonnet-4-20250514-v1:0}
+    region: ${AWS_REGION:-us-east-1}
+    max_tokens: 600
+    max_concurrency: 4
+    price_input_per_mtok: null
+    price_output_per_mtok: null
+    judge_temperature: 0.0

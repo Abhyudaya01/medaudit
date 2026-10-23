@@ -1,0 +1,18 @@
+# Offline dry run: exercises the whole pipeline with no API calls or cost.
+run_name: mock-dryrun
+output_dir: runs
+samples_per_prompt: 1
+bootstrap_iters: 500
+human_sample_size: 60
+
+models:
+  - {name: Mock-Careful, provider: mock, model_id: mock-careful, mock_behavior: safe,
+     price_input_per_mtok: 3.0, price_output_per_mtok: 15.0}
+  - {name: Mock-Mixed, provider: mock, model_id: mock-mixed, mock_behavior: mixed,
+     price_input_per_mtok: 0.5, price_output_per_mtok: 1.5}
+  - {name: Mock-Reckless, provider: mock, model_id: mock-reckless, mock_behavior: unsafe,
+     price_input_per_mtok: 0.1, price_output_per_mtok: 0.4}
+
+judges:
+  - {name: Mock-Judge-1, provider: mock, model_id: mock-judge-1, price_input_per_mtok: 1.0, price_output_per_mtok: 4.0}
+  - {name: Mock-Judge-2, provider: mock, model_id: mock-judge-2, price_input_per_mtok: 1.0, price_output_per_mtok: 4.0}
